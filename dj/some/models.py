@@ -6,6 +6,5 @@ class TmpGroupForFillingWithUsers(models.Model):
     """
     temporary table related to user, unique by user, we store only while user needs it
     """
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
     users = models.ManyToManyField(User)
     author = models.OneToOneField(User, related_name="author_user", on_delete=models.CASCADE, unique=True, null=False, blank=False)

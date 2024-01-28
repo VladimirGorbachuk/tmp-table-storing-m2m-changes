@@ -187,6 +187,13 @@ class UsersState{
         }
         this.totalFetchedUsers = totalFetchedUsers;
     };
+    setSelectedUsers({selectedUsers, totalSelectedUsers}){
+        this.selectedUsers = selectedUsers;
+        for(let user of this.selectedUsers){
+            user.isSelected = this.isSelected(user.id);
+        }
+        this.totalselectedUsers = totalSelectedUsers;
+    };
 }
 
 
@@ -231,23 +238,28 @@ class PaginationSelectedState{
         this.searchStr=searchStr;
     }
     async getInitialUsers(){
-        return;
+        const userResp = await getSelectedUsersResp({substring: this.searchStr, page: this.currentPage})
+        this.usersState.setSelectedUsers({selectedUsers: userResp.results, totalSelectedUsers: userResp.count})
     }
     async setCurrentPage(pageIdx){
+        if(this.currentPage === pageIdx){return}
+        const userResp = await getSelectedUsersResp({substring: this.searchStr, page: pageIdx})
+        this.usersState.setSelectedUsers({selectedUsers: userResp.results, totalSelectedUsers: userResp.count})
         this.currentPage = pageIdx;
     }
     async setSearchStr(searchStr){
+        if(this.searchStr === searchStr){return}
+        const userResp = await getSelectedUsersResp({substring: this.searchStr, page: this.currentPage})
+        this.usersState.setSelectedUsers({selectedUsers: userResp.results, totalSelectedUsers: userResp.count})
         this.searchStr = searchStr;
     }
+
     getUsersToDisplay(){
-        const firstIdx = this.currentPage * LIMIT_PER_PAGE;
-        const lastIdx = firstIdx + LIMIT_PER_PAGE;
-        const filtered = this.usersState.getSubstringFilteredSelectedUsers(this.searchStr)
-        return filtered.splice(firstIdx, lastIdx);
+        return this.usersState.selectedUsers;
     }
     getTotalPages(){
-        return calcPages(this.usersState.selectedUsers.length)
-     }
+       return calcPages(this.usersState.totalFetchedUsers)
+    }
 }
 
 
@@ -522,10 +534,10 @@ const initializeAll = async ({
         elementSelector:elementSelector,
         useCases:useCases,
     });
-    wireFormSubmit({
-        elementSelector:elementSelector,
-        useCases:useCases,
-    });
+    // wireFormSubmit({
+    //     elementSelector:elementSelector,
+    //     useCases:useCases,
+    // });
     //calls to add event listeners wiring usecases to elements! need to add here
 }
 
