@@ -1,6 +1,3 @@
-const ENDPOINT = "https://api.slingacademy.com/v1/sample-data/users" // of course here you should just use relative for your api)
-
-
 const SELECTED_USERS_ENDPOINT = "/api/selected_users/"
 const USERS_ENDPOINT = "/api/users"
 const ADD_SELECTED_ENDPOINT = "/api/add_users_to_tmp/"
@@ -42,6 +39,41 @@ const getSelectedUsersResp = async ({substring, page}) => {
     const json = await response.json();
     return json;
  };
+
+
+const removeSelected = async (ids, csrfToken) => {
+    console.log('current csrf', csrfToken)
+    const response = await fetch(
+        REMOVE_SELECTED_ENDPOINT,
+        {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json;charset=utf-8',
+              'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({selected_ids: ids, 'X-CSRFToken': csrfToken}),
+        },
+    );
+    return
+}
+
+
+const addSelected = async (ids, csrfToken) => {
+    console.log('current csrf', csrfToken)
+    const response = await fetch(
+        ADD_SELECTED_ENDPOINT,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8',
+                'X-CSRFToken': csrfToken
+              },
+            body: JSON.stringify({selected_ids: ids, 'X-CSRFToken': csrfToken}),
+        },
+    );
+    return
+}
+
 
 
 const userInfoToOptionRepr = ({id, username, email, date_joined, is_active, isSelected}) => {
@@ -307,12 +339,13 @@ class UsersRenderer{
 
 
 class UsersUseCases{
-    // here we c
-    constructor({usersState, paginatorSearch, paginatorSelect, renderer}){
+    // should move csrfToken to fetching class
+    constructor({usersState, paginatorSearch, paginatorSelect, renderer, csrfToken}){
         this.paginatorSearch = paginatorSearch;
         this.paginatorSelect = paginatorSelect;
         this.renderer = renderer;
         this.usersState = usersState;
+        this.csrfToken = csrfToken;
     }
     async getInitialState(){
         await this.paginatorSearch.getInitialUsers();
@@ -325,16 +358,13 @@ class UsersUseCases{
         this.renderer.setFetchedUsers(this.paginatorSearch.getUsersToDisplay())
         this.renderer.setSelectedUsers(this.paginatorSelect.getUsersToDisplay())
     }
-    selectUser(userId){
-        this.usersState.select(userId);
-        this.updateRenderer();
+    async selectUser(userId){
+        await addSelected([userId], this.csrfToken);
+        this.getInitialState();
     }
-    unselectUser(userId){
-        this.usersState.unselect(userId);
-        this.updateRenderer();
-    }
-    collectUserIds(){
-        return this.usersState.getSelectedUsersIds();
+    async unselectUser(userId){
+        await removeSelected([userId], this.csrfToken);
+        this.getInitialState();
     }
     async setSearchFilterStr(substring){
         await this.paginatorSearch.setSearchStr(substring);
@@ -352,11 +382,6 @@ class UsersUseCases{
         await this.paginatorSelect.setCurrentPage(pageIdx);
         this.updateRenderer();
     }
-    async submitForm(form){
-        const formData = new FormData(form);
-        formData.append("users", this.usersState.getSelectedUsersIds());
-        console.log("collected in formdata ready to send", Array.from(formData));
-    }
 }
 
 
@@ -368,7 +393,7 @@ class ElementSelector{
         usersSelectedElementId,
         paginationFetchedSearchBarElementId,
         paginationSelectedSearchBarElementId,
-        formElementId,
+        csrfElementName,
     }){
         this.paginationFetchedElement = document.getElementById(paginationFetchedElementId)
         this.paginationSelectedElement = document.getElementById(paginationSelectedElementId)
@@ -376,7 +401,7 @@ class ElementSelector{
         this.usersSelectedElement = document.getElementById(usersSelectedElementId)
         this.paginationFetchedSearchBarElement = document.getElementById(paginationFetchedSearchBarElementId)
         this.paginationSelectedSearchBarElement = document.getElementById(paginationSelectedSearchBarElementId)
-        this.formElement = document.getElementById(formElementId)
+        this.csrfElement = document.getElementsByName(csrfElementName)[0]
     }
 }
 
@@ -468,19 +493,6 @@ const wireChangeSelectSubstring = ({elementSelector, useCases}) => {
 }
 
 
-const wireFormSubmit = ({elementSelector, useCases}) => {
-    elementSelector.formElement.addEventListener(
-        "submit", 
-        async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const form = event.target;
-            await useCases.submitForm(form);
-        },
-    )
-}
-
-
 const initializeAll = async ({
     paginationFetchedElementId,
     paginationSelectedElementId,
@@ -488,7 +500,7 @@ const initializeAll = async ({
     usersSelectedElementId,
     paginationFetchedSearchBarElementId,
     paginationSelectedSearchBarElementId,
-    formElementId,
+    csrfElementName,
 }) => {
     const elementSelector = new ElementSelector({
         paginationFetchedElementId: paginationFetchedElementId,
@@ -497,17 +509,19 @@ const initializeAll = async ({
         usersSelectedElementId: usersSelectedElementId,
         paginationFetchedSearchBarElementId: paginationFetchedSearchBarElementId,
         paginationSelectedSearchBarElementId: paginationSelectedSearchBarElementId,
-        formElementId: formElementId,
+        csrfElementName: csrfElementName,
     });
     const usersState = new UsersState();
     const paginationSearchFetcher = new PaginationSearchFetcher(usersState);
     const paginationSelector = new PaginationSelectedState(usersState);
     const renderer = new UsersRenderer(elementSelector);
+    console.log("csrfelement", elementSelector.csrfElement, "val", elementSelector.csrfElement.value)
     const useCases = new UsersUseCases({
         usersState: usersState,
         paginatorSearch: paginationSearchFetcher,
         paginatorSelect: paginationSelector,
         renderer: renderer,
+        csrfToken: elementSelector.csrfElement.value, // move to separate fetcher class
     })
     await useCases.getInitialState();
     wireChangeFetchPageForButton({
@@ -534,11 +548,6 @@ const initializeAll = async ({
         elementSelector:elementSelector,
         useCases:useCases,
     });
-    // wireFormSubmit({
-    //     elementSelector:elementSelector,
-    //     useCases:useCases,
-    // });
-    //calls to add event listeners wiring usecases to elements! need to add here
 }
 
 (async () => {
@@ -550,7 +559,7 @@ const initializeAll = async ({
                 usersSelectedElementId: "itemsSelected",
                 paginationFetchedSearchBarElementId: "fetchSearchString",
                 paginationSelectedSearchBarElementId: "selectSearchString",
-                formElementId: "group_form",
+                csrfElementName: "csrfmiddlewaretoken",
             });
     } catch (e) {
         console.error(e);
