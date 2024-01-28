@@ -1,0 +1,51 @@
+{% extends "admin/change_form.html" %}{% block after_field_sets %}{{ block.super }}<div
+    class="changelist-form-container">
+    <div id="toolbar">
+        <form id="changelist-search" method="get" role="search">
+            <div><!-- DIV needed for valid HTML --> <label for="searchbar"><img src="/static/admin/img/search.svg"
+                        alt="Search"></label> <input type="text" size="40" name="q" value="" id="searchbar"> <input
+                    type="submit" value="Search"> </div>
+        </form>
+    </div>
+    <form id="changelist-form" method="post" novalidate=""><input type="hidden" name="csrfmiddlewaretoken"
+            value="CebwoxFuRcdsmvOkHlJjQCeZgfeVqfhzxq246hLy156OtDcaHOf5rskTCcqj7SIN">
+        <div class="actions"> <label>Action: <select name="action" required="">
+                    <option value="" selected="">---------</option>
+                    <option value="delete_selected">Delete selected users</option>
+                </select></label><input type="hidden" name="select_across" value="0" class="select-across"> <button
+                type="submit" class="button" title="Run the selected action" name="index" value="0">Go</button> <span
+                class="action-counter" data-actions-icnt="1">0 of 1 selected</span> </div>
+        <div class="results">
+            <div class="container-md">
+                <div class="input-group mb-3"> <span class="input-group-text">Поиск по имени на бэке</span> <input
+                        id="fetchSearchString" type="text" class="form-control" aria-label="Sizing example input"
+                        aria-describedby="inputGroup-sizing-default"> </div>
+                <table id="itemsFetched" class="form-select"></table>
+                <div id=paginatorFetched></div>
+            </div>
+        </div>
+        <p class="paginator"> 1 user </p>
+    </form>
+    <form id="changelist-form-selected" method="post" novalidate=""><input type="hidden" name="csrfmiddlewaretoken"
+        value="CebwoxFuRcdsmvOkHlJjQCeZgfeVqfhzxq246hLy156OtDcaHOf5rskTCcqj7SIN">
+    <div class="actions"> <label>Action: <select name="action" required="">
+                <option value="" selected="">---------</option>
+                <option value="delete_selected">Delete selected users</option>
+            </select></label><input type="hidden" name="select_across" value="0" class="select-across"> <button
+            type="submit" class="button" title="Run the selected action" name="index" value="0">Go</button> <span
+            class="action-counter" data-actions-icnt="1">0 of 1 selected</span> </div>
+    <div class="results">
+        <div class="container-md">
+            <div class="input-group mb-3"> <span class="input-group-text">Поиск по имени среди выбранных</span> <input
+                    id="selectSearchString" , type="text" class="form-control" aria-label="Sizing example input"
+                    aria-describedby="inputGroup-sizing-default"> </div>
+            <table id="itemsSelected" class="form-select"></table>
+            <div id=paginatorSelected></div>
+    </div>
+    <p class="paginator"> 1 user </p>
+   </form>
+</div>
+
+
+</div>{% load static %}
+<script src="{% static 'js/admin/paginated.js' %}"></script>{% endblock %}
