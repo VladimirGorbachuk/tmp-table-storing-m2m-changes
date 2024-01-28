@@ -20,12 +20,16 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         current_user = self.request.user
         tmp_model, _  = TmpGroupForFillingWithUsers.objects.get_or_create(author=current_user)
-        return self.queryset.annotate(
+        queryset = self.queryset.annotate(
             is_selected=ExpressionWrapper(
                 Q(tmp_models__isnull=False) & Q(tmp_models=tmp_model),
                 output_field=BooleanField(default=False)
             )
         )
+        search_substring = self.request.query_params.get('search')
+        if search_substring:
+            queryset = queryset.filter(username__contains=search_substring)
+        return queryset
 
 
 class TmpSelectedUserViewSet(viewsets.ModelViewSet):
@@ -39,7 +43,11 @@ class TmpSelectedUserViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         tmp_model, _  = TmpGroupForFillingWithUsers.objects.get_or_create(author=user)
-        return tmp_model.users.all().order_by('-date_joined').annotate(is_selected=Value(True))
+        queryset = tmp_model.users.all().order_by('-date_joined').annotate(is_selected=Value(True))
+        search_substring = self.request.query_params.get('search')
+        if search_substring:
+            queryset = queryset.filter(username__contains=search_substring)
+        return queryset
 
 
 class GroupViewSet(viewsets.ModelViewSet):
