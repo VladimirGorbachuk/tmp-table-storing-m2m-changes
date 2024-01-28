@@ -125,13 +125,13 @@ function* rangeSimple(first, last){
 const reprButton = (idx) => `<button class=Paginator value=${idx}>${idx+1}</button>`;
 
 
-const reprButtons = ({total, current}) => {
+const reprButtons = ({total, current, totalUsers}) => {
     let repr = ""
     if(total <= 10){
        for(let buttonNum of rangeSimple(0, total)){
            repr += reprButton(buttonNum)
        }
-       return repr
+       return repr + ` Всего: ${totalUsers}`;
     }
     if(current < 5){
         for(let buttonNum of rangeSimple(0, 10)){
@@ -139,7 +139,7 @@ const reprButtons = ({total, current}) => {
         }
         repr += "<span>...</span>";
         repr += reprButton(total-1);
-        return repr;
+        return repr + ` Всего: ${totalUsers}`;
     }
     if(total > current + 5){
         repr += reprButton(0);
@@ -149,14 +149,14 @@ const reprButtons = ({total, current}) => {
         }
         repr += "<span>...</span>";
         repr += reprButton(total-1);
-        return repr;
+        return repr + ` Всего: ${totalUsers}`;
     }
     repr += reprButton(0);
     repr += "<span>...</span>";
     for(let buttonNum of rangeSimple(current-5, total)){
         repr += reprButton(buttonNum)
     }
-    return repr;
+    return repr + ` Всего: ${totalUsers}`;
 }
 
 
@@ -214,6 +214,9 @@ class PaginationSearchFetcher{
     getTotalPages(){
        return calcPages(this.usersState.totalFetchedUsers)
     }
+    getTotalUsers(){
+        return this.usersState.totalFetchedUsers;
+    }
 }
 
 
@@ -244,7 +247,10 @@ class PaginationSelectedState{
         return this.usersState.selectedUsers;
     }
     getTotalPages(){
-       return calcPages(this.usersState.totalSelectedUsers)
+       return calcPages(this.usersState.totalSelectedUsers);
+    }
+    getTotalUsers(){
+        return this.usersState.totalSelectedUsers;
     }
 }
 
@@ -255,25 +261,45 @@ class UsersRenderer{
       this.paginationSelectedElement = elementSelector.paginationSelectedElement
       this.usersFetchedElement = elementSelector.usersFetchedElement;
       this.usersSelectedElement = elementSelector.usersSelectedElement;
-      this.fetchedState = {currentPage: 0, totalPages: 0, users: []};
-      this.selectedState = {currentPage: 0, totalPages: 0, users: []};
+      this.fetchedState = {currentPage: 0, totalPages: 0, users: [], totalUsers: 0};
+      this.selectedState = {currentPage: 0, totalPages: 0, users: [], totalUsers: 0};
       // should add last rendered and comparison before rendering
    }
-   setPaginationFetched(currentPage, totalPages){
-     if(this.fetchedState.currentPage === currentPage && this.fetchedState.totalPages === totalPages){
+   setPaginationFetched(paginatorFetched){
+     if(
+        this.fetchedState.currentPage === paginatorFetched.currentPage 
+        && this.fetchedState.totalPages === paginatorFetched.getTotalPages()
+        && this.fetchedState.totalUsers === paginatorFetched.getTotalUsers()
+    ){
         return;
      }
-     this.paginationFetchedElement.innerHTML = reprButtons({total: totalPages, current: currentPage});
-     this.fetchedState.currentPage = currentPage;
-     this.fetchedState.totalPages = totalPages;
+     this.paginationFetchedElement.innerHTML = reprButtons(
+        {
+            total: paginatorFetched.getTotalPages(),
+            current: paginatorFetched.currentPage,
+            totalUsers: paginatorFetched.getTotalUsers(),
+        },
+     );
+     this.fetchedState.currentPage = paginatorFetched.currentPage;
+     this.fetchedState.totalPages = paginatorFetched.getTotalPages();
    }
-   setPaginationSelected(currentPage, totalPages){
-    if(this.selectedState.currentPage === currentPage && this.selectedState.totalPages === totalPages){
+   setPaginationSelected(paginatorSelect){
+    if(
+        this.selectedState.currentPage === paginatorSelect.currentPage 
+        && this.selectedState.totalPages === paginatorSelect.getTotalPages()
+        && this.selectedState.totalUsers === paginatorSelect.getTotalUsers()
+    ){
         return;
      }
-      this.paginationSelectedElement.innerHTML = reprButtons({total: totalPages, current: currentPage});
-      this.selectedState.currentPage = currentPage;
-      this.selectedState.totalPages = totalPages;
+      this.paginationSelectedElement.innerHTML = reprButtons(
+        {
+            total: paginatorSelect.getTotalPages(),
+            current: paginatorSelect.currentPage,
+            totalUsers: paginatorSelect.getTotalUsers(),
+        },
+      );
+      this.selectedState.currentPage = paginatorSelect.currentPage;
+      this.selectedState.totalPages = paginatorSelect.getTotalPages();
    }
    setFetchedUsers(users){
     if(this.fetchedState.users === JSON.stringify(users)){
@@ -307,8 +333,8 @@ class UsersUseCases{
         this.updateRenderer();
     }
     updateRenderer(){
-        this.renderer.setPaginationFetched(this.paginatorSearch.currentPage, this.paginatorSearch.getTotalPages())
-        this.renderer.setPaginationSelected(this.paginatorSelect.currentPage, this.paginatorSelect.getTotalPages())
+        this.renderer.setPaginationFetched(this.paginatorSearch)
+        this.renderer.setPaginationSelected(this.paginatorSelect)
         this.renderer.setFetchedUsers(this.paginatorSearch.getUsersToDisplay())
         this.renderer.setSelectedUsers(this.paginatorSelect.getUsersToDisplay())
     }

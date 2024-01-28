@@ -23,8 +23,15 @@
                 <div id=paginatorFetched></div>
             </div>
         </div>
-        <p class="paginator"> 1 user </p>
+        <p class="paginator"></p>
     </form>
+    <div id="toolbar">
+        <form id="changelist-search-selected" method="get" role="search">
+            <div><!-- DIV needed for valid HTML --> <label for="searchbar"><img src="/static/admin/img/search.svg"
+                        alt="Search"></label> <input type="text" size="40" name="q" value="" id="searchbar"> <input
+                    type="submit" value="Search"> </div>
+        </form>
+    </div>
     <form id="changelist-form-selected" method="post" novalidate="">
     <div class="actions"> <label>Action: <select name="action" required="">
                 <option value="" selected="">---------</option>
@@ -40,7 +47,7 @@
             <table id="itemsSelected" class="form-select"></table>
             <div id=paginatorSelected></div>
     </div>
-    <p class="paginator"> 1 user </p>
+    <p class="paginator"> </p>
    </form>
 </div>
 
