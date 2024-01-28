@@ -203,7 +203,7 @@ class PaginationSearchFetcher{
     }
     async setSearchStr(searchStr){
         if(this.searchStr === searchStr){return}
-        const userResp = await getUsersResp({substring: this.searchStr, page: this.currentPage})
+        const userResp = await getUsersResp({substring: searchStr, page: this.currentPage})
         this.usersState.setFetchedUsers({fetchedUsers: userResp.results, totalFetchedUsers: userResp.count})
         this.searchStr = searchStr;
     }
@@ -238,7 +238,7 @@ class PaginationSelectedState{
     }
     async setSearchStr(searchStr){
         if(this.searchStr === searchStr){return}
-        const userResp = await getSelectedUsersResp({substring: this.searchStr, page: this.currentPage})
+        const userResp = await getSelectedUsersResp({substring: searchStr, page: this.currentPage})
         this.usersState.setSelectedUsers({selectedUsers: userResp.results, totalSelectedUsers: userResp.count})
         this.searchStr = searchStr;
     }
@@ -373,6 +373,8 @@ class ElementSelector{
         usersSelectedElementId,
         paginationFetchedSearchBarElementId,
         paginationSelectedSearchBarElementId,
+        searchFetchedFormId,
+        searchSelectedFormId,
         csrfElementName,
     }){
         this.paginationFetchedElement = document.getElementById(paginationFetchedElementId)
@@ -381,6 +383,8 @@ class ElementSelector{
         this.usersSelectedElement = document.getElementById(usersSelectedElementId)
         this.paginationFetchedSearchBarElement = document.getElementById(paginationFetchedSearchBarElementId)
         this.paginationSelectedSearchBarElement = document.getElementById(paginationSelectedSearchBarElementId)
+        this.searchFetchedForm = document.getElementById(searchFetchedFormId)
+        this.searchSelectedForm = document.getElementById(searchSelectedFormId)
         this.csrfElement = document.getElementsByName(csrfElementName)[0]
     }
 }
@@ -445,29 +449,27 @@ const wireClickOnSelectedUser = ({elementSelector, useCases}) => {
 }
 
 
-const wireChangeFetchSubstring = ({elementSelector, useCases}) => {
-    elementSelector.paginationFetchedSearchBarElement.addEventListener(
-        "change", 
+const wireSubmitFetchSearch = ({elementSelector, useCases}) => {
+    elementSelector.searchFetchedForm.addEventListener(
+        "submit", 
         async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const element = event.target;
-            const text = element.value;
-            await useCases.setSearchFilterStr(text);
+            await useCases.setSearchFilterStr(elementSelector.paginationFetchedSearchBarElement.value);
         },
     )
 }
 
 
-const wireChangeSelectSubstring = ({elementSelector, useCases}) => {
-    elementSelector.paginationSelectedSearchBarElement.addEventListener(
-        "change", 
+const wireSubmitSelectSearch = ({elementSelector, useCases}) => {
+    elementSelector.searchSelectedForm.addEventListener(
+        "submit", 
         async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const element = event.target;
-            const text = element.value;
-            await useCases.setSelectedFilterStr(text);
+            await useCases.setSelectedFilterStr(
+                elementSelector.paginationSelectedSearchBarElement.value,
+            );
         },
     )
 }
@@ -480,6 +482,8 @@ const initializeAll = async ({
     usersSelectedElementId,
     paginationFetchedSearchBarElementId,
     paginationSelectedSearchBarElementId,
+    searchFetchedFormId,
+    searchSelectedFormId,
     csrfElementName,
 }) => {
     const elementSelector = new ElementSelector({
@@ -489,6 +493,8 @@ const initializeAll = async ({
         usersSelectedElementId: usersSelectedElementId,
         paginationFetchedSearchBarElementId: paginationFetchedSearchBarElementId,
         paginationSelectedSearchBarElementId: paginationSelectedSearchBarElementId,
+        searchFetchedFormId: searchFetchedFormId,
+        searchSelectedFormId: searchSelectedFormId,
         csrfElementName: csrfElementName,
     });
     const usersState = new UsersState();
@@ -511,11 +517,11 @@ const initializeAll = async ({
         elementSelector:elementSelector,
         useCases:useCases,
     });
-    wireChangeFetchSubstring({
+    wireSubmitFetchSearch({
         elementSelector:elementSelector,
         useCases:useCases,
     });
-    wireChangeSelectSubstring({
+    wireSubmitSelectSearch({
         elementSelector:elementSelector,
         useCases:useCases,
     });
@@ -539,6 +545,8 @@ const initializeAll = async ({
                 paginationFetchedSearchBarElementId: "fetchSearchString",
                 paginationSelectedSearchBarElementId: "selectSearchString",
                 csrfElementName: "csrfmiddlewaretoken",
+                searchFetchedFormId: "changelist-search-fetched",
+                searchSelectedFormId: "changelist-search-selected",
             });
     } catch (e) {
         console.error(e);
