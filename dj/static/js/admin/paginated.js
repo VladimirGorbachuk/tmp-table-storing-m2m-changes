@@ -42,7 +42,6 @@ const getSelectedUsersResp = async ({substring, page}) => {
 
 
 const removeSelected = async (ids, csrfToken) => {
-    console.log('current csrf', csrfToken)
     const response = await fetch(
         REMOVE_SELECTED_ENDPOINT,
         {
@@ -59,7 +58,6 @@ const removeSelected = async (ids, csrfToken) => {
 
 
 const addSelected = async (ids, csrfToken) => {
-    console.log('current csrf', csrfToken)
     const response = await fetch(
         ADD_SELECTED_ENDPOINT,
         {
@@ -168,63 +166,19 @@ class UsersState{
         this.selectedUsers = selectedUsers;
         this.totalFetchedUsers = totalFetchedUsers;
     }
-    isSelected(userId){
-        for(let user of this.selectedUsers){
-            if(userId===user.id){
-                return true;
-            }
-        }
-        return false;
-    }
-    select(userId){
-       for(let user of this.fetchedUsers){
-         if(user.id === userId && user.isSelected !== true){
-           user.isSelected = true;
-           this.selectedUsers.push(user);
-           return;
-         }
-       }
-    }
-    unselect(userId){
-        for(const [idx, user] of this.selectedUsers.entries()){
-          if(user.id === userId){
-            user.isSelected=false;
-            this.selectedUsers.splice(idx, 1);
-            return;
-          }
-        }
-    }
-    getTotalSelectedUsers(){
-        return this.selectedUsers.length;
-    }
-    getSelectedUsersIds(){
-        return this.selectedUsers.map(user=>user.id);
-    }
-    getSubstringFilteredSelectedUsers(substring){
-        return this.selectedUsers.reduce(
-            (acc, user) => {
-                if(user.username.includes(substring) || user.email.includes(substring)){
-                    acc.push(user);
-                    return acc;
-                }
-                return acc;
-            },
-            [],
-        )
-    };
     setFetchedUsers({fetchedUsers, totalFetchedUsers}){
         this.fetchedUsers = fetchedUsers;
         for(let user of this.fetchedUsers){
-            user.isSelected = this.isSelected(user.id);
+            user.isSelected = user.is_selected;
         }
         this.totalFetchedUsers = totalFetchedUsers;
     };
     setSelectedUsers({selectedUsers, totalSelectedUsers}){
         this.selectedUsers = selectedUsers;
         for(let user of this.selectedUsers){
-            user.isSelected = this.isSelected(user.id);
+            user.isSelected = user.is_selected;
         }
-        this.totalselectedUsers = totalSelectedUsers;
+        this.totalSelectedUsers = totalSelectedUsers;
     };
 }
 
@@ -290,7 +244,7 @@ class PaginationSelectedState{
         return this.usersState.selectedUsers;
     }
     getTotalPages(){
-       return calcPages(this.usersState.totalFetchedUsers)
+       return calcPages(this.usersState.totalSelectedUsers)
     }
 }
 
@@ -515,7 +469,6 @@ const initializeAll = async ({
     const paginationSearchFetcher = new PaginationSearchFetcher(usersState);
     const paginationSelector = new PaginationSelectedState(usersState);
     const renderer = new UsersRenderer(elementSelector);
-    console.log("csrfelement", elementSelector.csrfElement, "val", elementSelector.csrfElement.value)
     const useCases = new UsersUseCases({
         usersState: usersState,
         paginatorSearch: paginationSearchFetcher,
