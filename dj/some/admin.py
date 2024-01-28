@@ -15,8 +15,6 @@ class GroupNewAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         current_user = request.user
         tmp_selected = TmpGroupForFillingWithUsers.objects.get(author=current_user)
-        print("users", tmp_selected.users.all()[:10])
-        print("what is with obj", obj)
         super().save_model(request, obj, form, change)
         for user in tmp_selected.users.all():
             user.groups.add(obj)

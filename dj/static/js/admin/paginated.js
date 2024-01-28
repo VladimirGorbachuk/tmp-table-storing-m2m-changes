@@ -74,7 +74,7 @@ const addSelected = async (ids, csrfToken) => {
 
 
 
-const userInfoToOptionRepr = ({id, username, email, date_joined, is_active, isSelected}) => {
+const userInfoToOptionRepr = ({id, username, email, date_joined, is_active, is_selected}) => {
     return `
        <tr data-value=${id}>
          <td class="action-checkbox"><input type="checkbox" name="_selected_action" value="1"
@@ -83,7 +83,7 @@ const userInfoToOptionRepr = ({id, username, email, date_joined, is_active, isSe
          <td class="field-username"> ${email} </td>
          <td class="field-username">${date_joined}<td> 
          <td class="field-username"> ${is_active}</td>
-         <td class="field-username"> ${isSelected} </td>
+         <td class="field-username"> ${is_selected} </td>
        </tr>
     `
 }
@@ -169,14 +169,14 @@ class UsersState{
     setFetchedUsers({fetchedUsers, totalFetchedUsers}){
         this.fetchedUsers = fetchedUsers;
         for(let user of this.fetchedUsers){
-            user.isSelected = user.is_selected;
+            user.is_selected = user.is_selected;
         }
         this.totalFetchedUsers = totalFetchedUsers;
     };
     setSelectedUsers({selectedUsers, totalSelectedUsers}){
         this.selectedUsers = selectedUsers;
         for(let user of this.selectedUsers){
-            user.isSelected = user.is_selected;
+            user.is_selected = user.is_selected;
         }
         this.totalSelectedUsers = totalSelectedUsers;
     };

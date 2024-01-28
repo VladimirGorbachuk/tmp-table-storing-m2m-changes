@@ -11,9 +11,11 @@ class UserIdSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    is_selected = serializers.BooleanField(default=True)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'date_joined', 'is_active']
+        fields = ['id', 'username', 'email', 'date_joined', 'is_active', 'is_selected']
 
 
 class GroupSerializer(serializers.ModelSerializer):

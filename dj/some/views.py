@@ -1,11 +1,12 @@
 from django.contrib.auth.models import Group, User
+from django.db.models import Value, BooleanField, Case, When, ExpressionWrapper, Q
 from rest_framework import permissions, viewsets
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .models import TmpGroupForFillingWithUsers
-from .serializers import GroupSerializer, TmpGroupSerializer, UserIdsSerializer, UserSerializer
+from some.models import TmpGroupForFillingWithUsers
+from some.serializers import GroupSerializer, TmpGroupSerializer, UserIdsSerializer, UserSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -16,19 +17,29 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        current_user = self.request.user
+        tmp_model, _  = TmpGroupForFillingWithUsers.objects.get_or_create(author=current_user)
+        return self.queryset.annotate(
+            is_selected=ExpressionWrapper(
+                Q(tmp_models__isnull=False) & Q(tmp_models=tmp_model),
+                output_field=BooleanField(default=False)
+            )
+        )
+
 
 class TmpSelectedUserViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
     """
-    queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+    queryset = User.objects.all().order_by('-date_joined')
 
     def get_queryset(self):
         user = self.request.user
         tmp_model, _  = TmpGroupForFillingWithUsers.objects.get_or_create(author=user)
-        return tmp_model.users.all()
+        return tmp_model.users.all().order_by('-date_joined').annotate(is_selected=Value(True))
 
 
 class GroupViewSet(viewsets.ModelViewSet):
